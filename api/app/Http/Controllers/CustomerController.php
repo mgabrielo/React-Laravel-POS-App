@@ -45,7 +45,7 @@ class CustomerController extends Controller
             DB::beginTransaction();
             $data['customer']=Customer::create($validator->validated());
             DB::commit();
-            return $this->sendResponse("Customer cretaed Successfully",$data,201);
+            return $this->sendResponse("Customer created Successfully",$data,201);
 
         } catch (Exception $e) {
             DB::rollback();

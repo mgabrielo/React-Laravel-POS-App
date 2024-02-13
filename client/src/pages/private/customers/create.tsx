@@ -38,7 +38,7 @@ const CustomerCreate = () => {
   const {
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     control,
   } = useForm({
     resolver: yupResolver(schema),
@@ -54,7 +54,7 @@ const CustomerCreate = () => {
   const onSubmit = async (data: any) => {
     try {
       const resData = await createData(data);
-      console.log(resData);
+      //   console.log(resData);
       if (resData) {
         reset();
         navigate("..");
@@ -165,9 +165,10 @@ const CustomerCreate = () => {
             variant="contained"
             color="success"
             type="button"
+            disabled={isSubmitting}
             onClick={handleSubmit(onSubmit)}
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save"}
           </Button>
           <Button
             sx={{ my: 2 }}

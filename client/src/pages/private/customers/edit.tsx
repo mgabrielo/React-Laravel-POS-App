@@ -40,7 +40,7 @@ const CustomerEdit = () => {
   const {
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     control,
   } = useForm({
     resolver: yupResolver(schema),
@@ -53,22 +53,24 @@ const CustomerEdit = () => {
     },
   });
 
-  useEffect(() => {
-    const initForm = async () => {
-      try {
-        if (id) {
-          const resData = await getData(id);
-          if (resData.data) {
-            reset(resData?.data?.customer);
-          }
-        } else {
-          navigate(-1);
+  const initForm = async () => {
+    try {
+      if (id) {
+        const resData = await getData(id);
+        if (resData.data) {
+          reset(resData?.data?.customer);
         }
-      } catch (error) {
-        console.log(error);
+      } else {
+        navigate(-1);
       }
-    };
-    initForm();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    if (id) {
+      initForm();
+    }
   }, [id]);
   const onSubmit = async (data: any) => {
     try {
@@ -184,9 +186,10 @@ const CustomerEdit = () => {
             variant="contained"
             color="success"
             type="button"
+            disabled={isSubmitting}
             onClick={handleSubmit(onSubmit)}
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save"}
           </Button>
           <Button
             sx={{ my: 2 }}
