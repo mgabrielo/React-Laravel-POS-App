@@ -87,7 +87,7 @@ class ProductController extends Controller
         try {
             $data['product']= Product::with('category:id,name')->find($id);
             if(empty($data['product'])){
-                return $this->sendError("Produc Not Found",["errors"=>["general"=>"product not found"]] ,404);
+                return $this->sendError("Product Not Found",["errors"=>["general"=>"product not found"]] ,404);
             }
             return $this->sendResponse("Product Found Successfully",$data,200);
         } catch (Exception $e) {
@@ -175,5 +175,21 @@ class ProductController extends Controller
         }
     }
 
+    public function getProductList(){
+        try{
+            $query =DB::table('products');
+            if(!empty($request->search)){
+                $query->where(function($query) use($request){
+                    $query->orWhere('name', 'like', '%'.$request->search.'%');
+                });
+            }
+            $data['products']= $query->orderBy('name')->limit(100)->get(['id', 'name as label', 'stock', 'price']);
+            return $this->sendResponse("List fetched Successfully",$data, 200);
+
+        } catch (Exception $e) {
+            DB::rollback();
+            return $this->handleException($e);
+        }
+    }
 
 }

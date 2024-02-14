@@ -10,6 +10,10 @@ import Products from "../pages/private/products";
 import ProductList from "../pages/private/products/list";
 import ProductCreate from "../pages/private/products/create";
 import ProductEdit from "../pages/private/products/edit";
+import Orders from "../pages/private/orders";
+import OrderList from "../pages/private/orders/list";
+// import OrderCreate from "../pages/private/orders/create";
+// import OrderView from "../pages/private/orders/view";
 
 const routes = [
   {
@@ -62,6 +66,24 @@ const routes = [
             path: "edit/:id",
             element: <ProductEdit />,
           },
+        ],
+      },
+      {
+        path: "orders",
+        element: <PrivateRoute element={<Orders />} />,
+        children: [
+          {
+            path: "",
+            element: <OrderList />,
+          },
+          // {
+          //   path: "create",
+          //   element: <OrderCreate />,
+          // },
+          // {
+          //   path: "view/:id",
+          //   element: <OrderView />,
+          // },
         ],
       },
     ],

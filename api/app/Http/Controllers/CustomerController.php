@@ -118,8 +118,30 @@ class CustomerController extends Controller
                 DB::beginTransaction();
                 $data['customer']->delete();
                 DB::commit();
-                return $this->sendResponse("Product deleted Successfully",$data, 200);
+                return $this->sendResponse("Customer deleted Successfully",$data, 200);
             }
+        } catch (Exception $e) {
+            DB::rollback();
+            return $this->handleException($e);
+        }
+    }
+
+
+    public function getCustomerList(){
+        try{
+            $query =DB::table('customers');
+            if(!empty($request->search)){
+                $query->where(function($query) use($request){
+                    $query->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"), 'like', '%'.$request->search.'%');
+                    $query->orWhere('last_name', 'like', '%'.$request->search.'%');
+                    $query->orWhere('email', 'like', '%'.$request->search.'%');
+                    $query->orWhere('phone_number', 'like', '%'.$request->search.'%');
+                    $query->orWhere('zip_code', 'like', '%'.$request->search.'%');
+                });
+            }
+            $data['customers']= $query->orderBy('first_name')->limit(100)->get(['id', DB::raw("CONCAT(first_name,' ','last_name') as fullname")]);
+            return $this->sendResponse("List fetched Successfully",$data, 200);
+
         } catch (Exception $e) {
             DB::rollback();
             return $this->handleException($e);

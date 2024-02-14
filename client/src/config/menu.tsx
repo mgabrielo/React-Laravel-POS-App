@@ -7,4 +7,8 @@ export const navItems = [
     label: "Products",
     url: "/dashboard/products",
   },
+  {
+    label: "Orders",
+    url: "/dashboard/orders",
+  },
 ];
