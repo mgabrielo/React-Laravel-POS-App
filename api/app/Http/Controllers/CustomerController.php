@@ -118,7 +118,7 @@ class CustomerController extends Controller
                 DB::beginTransaction();
                 $data['customer']->delete();
                 DB::commit();
-                return $this->sendResponse("List deleted Successfully",$data, 200);
+                return $this->sendResponse("Product deleted Successfully",$data, 200);
             }
         } catch (Exception $e) {
             DB::rollback();

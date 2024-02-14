@@ -6,6 +6,11 @@ import PrivateRoute from "../middleware/PrivateRoute";
 import CustomerList from "../pages/private/customers/list";
 import CustomerCreate from "../pages/private/customers/create";
 import CustomerEdit from "../pages/private/customers/edit";
+import Products from "../pages/private/products";
+import ProductList from "../pages/private/products/list";
+import ProductCreate from "../pages/private/products/create";
+import ProductEdit from "../pages/private/products/edit";
+
 const routes = [
   {
     path: "/",
@@ -38,6 +43,24 @@ const routes = [
           {
             path: "edit/:id",
             element: <CustomerEdit />,
+          },
+        ],
+      },
+      {
+        path: "products",
+        element: <PrivateRoute element={<Products />} />,
+        children: [
+          {
+            path: "",
+            element: <ProductList />,
+          },
+          {
+            path: "create",
+            element: <ProductCreate />,
+          },
+          {
+            path: "edit/:id",
+            element: <ProductEdit />,
           },
         ],
       },

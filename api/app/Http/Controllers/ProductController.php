@@ -20,8 +20,8 @@ class ProductController extends Controller
     {
         try {
             $data['products']= DB::table('products')
-            // ->leftJoin('categories', 'categories.id', '=', 'products.catgeory_id')
-            // ->select(["products.*", 'categories.name as category'])
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->select(["products.*", 'categories.name as category'])
             ->get();
             return $this->sendResponse("List fetched Successfully",$data, 200);
         } catch (Exception $e) {
@@ -29,7 +29,7 @@ class ProductController extends Controller
         }
     }
 
-    public function getCategories():JsonResponse
+    public function categories():JsonResponse
     {
         try {
             $data['categories']= DB::table('categories')->select('id', 'name')->get();
@@ -102,41 +102,54 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
 
-        $data['product']= Product::find($id);
+        $data['product'] = Product::find($id);
+
         if(empty($data['product'])){
-            return $this->sendError("Produc Not Found",["errors"=>["general"=>"product not found"]] ,404);
+            return $this->sendError("Product Not Found", ["errors" => ["general" => "Product not found"]], 404);
         }
-        $validator= Validator::make($request->all(),[
-            "name"=> "required|string|max:255|unique:products,name," .$data['product']->id,
-            "category_id"=> "required",
-            "stock"=> "required|numeric",
-            "price"=> "required|numeric",
-            "image"=> "sometimes|mimes:jpeg,png,jpg|max:5000",
+
+        $validator = Validator::make($request->all(), [
+            "name" => "required|string|max:255|unique:products,name," . $data['product']->id,
+            "category_id" => "required",
+            "stock" => "required|numeric",
+            "price" => "required|numeric",
+            "image" => "sometimes|mimes:jpeg,png,jpg|max:5000",
         ]);
 
         if($validator->fails()){
-            return $this->sendError("Please Enter Valid input data", $validator->errors(),400);
+            return $this->sendError("Please enter valid input data", $validator->errors(), 400);
         }
-        $postData =$validator->validated();
-        if(!empty($postData['image'])){
-            $imageFile=$postData['image'];
-            $imageFileName=Carbon::now()->timestamp."-".uniqid().".".$imageFile->getClientOriginalExtension();
 
-            if(!Storage::disk('public')->exists('product-category')){
-                Storage::disk('public')->makeDirectory('product-category');
+        $postData = $validator->validated();
+
+        if(!empty($postData['image'])){
+            $imageFile = $postData['image'];
+            $imageFileName = Carbon::now()->timestamp . "-" . uniqid() . "." . $imageFile->getClientOriginalExtension();
+
+            $productImagePath = 'product-category';
+
+            if(!Storage::disk('public')->exists($productImagePath)){
+                Storage::disk('public')->makeDirectory($productImagePath);
             }
 
-            if(!Storage::disk('public')->exists($data['product']->image)){
+            if(!empty($data['product']->image) && Storage::disk('public')->exists($data['product']->image)){
                 Storage::disk('public')->delete($data['product']->image);
             }
 
-            $imagePath =Storage::disk('public')->putFileAs('product-category', $imageFile, $imageFileName);
-            $postData['image']=$imagePath;
+            $imagePath = Storage::disk('public')->putFileAs($productImagePath, $imageFile, $imageFileName);
+            $postData['image'] = $imagePath;
         }
+
         DB::beginTransaction();
-        $data['product']=$data['product']->update();
-        DB::commit();
-        return $this->sendResponse("product created Successfully",$data,201);
+
+        try {
+            $data['product']->update($postData);
+            DB::commit();
+            return $this->sendResponse("Product updated successfully", $data, 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->sendError("Error updating product", ["error" => $e->getMessage()], 500);
+        }
     }
 
 
@@ -154,7 +167,7 @@ class ProductController extends Controller
                 DB::beginTransaction();
                 $data['product']->delete();
                 DB::commit();
-                return $this->sendResponse("List deleted Successfully",$data, 200);
+                return $this->sendResponse("Product deleted Successfully",$data, 200);
             }
         } catch (Exception $e) {
             DB::rollback();

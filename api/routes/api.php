@@ -48,9 +48,10 @@ Route::group([
 ], function ($router) {
 
     Route::get('/list', [ProductController::class, 'index']);
+    Route::get('/categories', [ProductController::class, 'categories']);
     Route::post('/', [ProductController::class, 'store']);
-    Route::get('/get-categories', [ProductController::class, 'getCategories']);
     Route::post('/{id}', [ProductController::class, 'update']);
     Route::delete('/{id}', [ProductController::class, 'destroy']);
+    Route::get('/{id}', [ProductController::class, 'show']);
 
 });
