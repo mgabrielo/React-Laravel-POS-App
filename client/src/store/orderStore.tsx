@@ -3,7 +3,6 @@ import { IRootStore } from "./rootStore";
 import { GridColDef, GridRowProps } from "@mui/x-data-grid";
 import ListItemButton from "@mui/material/ListItemButton";
 import { Link } from "react-router-dom";
-import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 // import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -46,29 +45,26 @@ export default class OrderStore {
           >
             <VisibilityIcon />
           </ListItemButton>
-          {/* <ListItemButton
-            sx={{ width: 0 }}
-            onClick={() => this.deleteDialog(params)}
-          >
-            <DeleteIcon />
-          </ListItemButton> */}
         </>
       ),
     },
   ];
+
   private rootStore: IRootStore;
+  cartItems: any[] = [];
+
   constructor(rootStore: IRootStore) {
     makeObservable(this, {
       rowData: observable,
+      cartItems: observable,
       columns: observable,
       setRowData: action,
       fetchList: action,
       createData: action,
-      getProductData: action,
-      updateData: action,
-      deleteDialog: action,
-      deleteData: action,
+      getData: action,
       fetchCategories: action,
+      setCartItems: action,
+      removeFromCart: action,
     });
     this.rootStore = rootStore;
   }
@@ -118,76 +114,103 @@ export default class OrderStore {
     }
   };
 
-  createData = async (data: any) => {
-    const response = await fetch(`${this.BASE_URL}/`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.rootStore.authstore.token}`,
-      },
-      body: data,
-    });
-    const result = await response.json();
-    if (response.ok) {
-      return Promise.resolve(result);
-    } else {
-      return Promise.reject(result);
+  getData = async (id: number | string) => {
+    try {
+      const response = await fetch(this.BASE_URL + `/${id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.rootStore.authstore.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      if (data.error) {
+        this.rootStore.handleError(response.status, data.message, data);
+        return Promise.reject(data);
+      } else {
+        const orderItems = data.data.order?.items.map((item: any) => {
+          if (item) {
+            return {
+              product: {
+                label: item.product_name,
+              },
+              quantity: item.product_quantity,
+              price: item.product_price,
+              discount: item.product_discount,
+              total: this.calculateFinalPrice(
+                item.product_price,
+                item.product_discount,
+                item.product_quantity
+              ),
+            };
+          }
+          return null;
+        });
+        this.setCartItems(orderItems);
+        return Promise.resolve(data.data.order);
+      }
+    } catch (error: any) {
+      this.rootStore.handleError(419, "Something went wrong!", error);
     }
   };
 
-  getProductData = async (id: number | string) => {
-    const response = await fetch(`${this.BASE_URL}/${id}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${this.rootStore.authstore.token}`,
-        "Content-Type": "Application/json",
-      },
-    });
-    const result = await response.json();
-    console.log(result);
-    if (response.ok) {
-      return Promise.resolve(result);
-    } else {
-      return Promise.reject(result);
+  createData = async (customerData: any) => {
+    try {
+      const postDataProducts = [...this.cartItems].map((e: any) => {
+        return {
+          product_id: e.product.id,
+          quantity: e.quantity,
+          discount: e.discount,
+        };
+      });
+      console.log("createData", postDataProducts);
+      const formData = new FormData();
+      formData.append("customer_id", customerData.customer?.id);
+      postDataProducts.forEach((item: any, i: number) => {
+        if (item) {
+          return Object.keys(item).map((key: any) => {
+            return formData.append(`products[${i}][${key}]`, item[key]);
+          });
+        }
+        return null;
+      });
+      const response = await fetch(this.BASE_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.rootStore.authstore.token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("api-data", data);
+      if (data.error) {
+        return Promise.reject(data);
+      } else {
+        return Promise.resolve(data);
+      }
+    } catch (error: any) {
+      this.rootStore.handleError(419, "Something went wrong!", error);
     }
   };
 
-  updateData = async (id: any, data: any) => {
-    const response = await fetch(`${this.BASE_URL}/${id}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.rootStore.authstore.token}`,
-      },
-      body: data,
-    });
-    const result = await response.json();
-    console.log(result);
-    if (response.ok) {
-      return Promise.resolve(result);
-    } else {
-      return Promise.reject(result);
-    }
+  setCartItems = (items: any[]) => {
+    this.cartItems = items;
   };
-  deleteData = async (id: any) => {
-    const response = await fetch(`${this.BASE_URL}/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${this.rootStore.authstore.token}`,
-        "Content-Type": "Application/json",
-      },
-    });
-    const result = await response.json();
-    if (response.ok) {
-      this.setRowData(this.rowData.filter((item) => item?.id !== id));
-      return Promise.resolve(result);
-    } else {
-      return Promise.reject(result);
-    }
+  addToCart = async (value: any): Promise<boolean> => {
+    this.cartItems.push(value);
+    return Promise.resolve(true);
+  };
+  removeFromCart = async (index: any) => {
+    this.cartItems.splice(index, 1);
   };
 
-  deleteDialog = async (params: any) => {
-    this.rootStore.dialogStore.openDialog({
-      confirmFn: () => this.deleteData(params.row.id),
-      dialogText: "Are you Sure You Want to Delete This Product ?",
-    });
+  calculateFinalPrice = (
+    original: number,
+    discount: number,
+    quantity: number
+  ): number => {
+    const finalPrice = original - (original * discount) / 100;
+    return finalPrice * quantity;
   };
 }

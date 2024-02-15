@@ -189,4 +189,25 @@ export default class ProductStore {
       dialogText: "Are you Sure You Want to Delete This Product ?",
     });
   };
+
+  getList = async (postData: any) => {
+    try {
+      const response = await fetch(this.BASE_URL + "/get-list", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.rootStore.authstore.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      });
+      const data = await response.json();
+      if (data.error) {
+        return Promise.reject(data);
+      } else {
+        return Promise.resolve(data.data.products);
+      }
+    } catch (error: any) {
+      this.rootStore.handleError(419, "Something went wrong!", error);
+    }
+  };
 }

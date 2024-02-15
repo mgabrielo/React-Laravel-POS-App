@@ -97,13 +97,16 @@ const ProductEdit = () => {
       const formData = new FormData();
       if (id) {
         Object.keys(data).map((key) => {
-          if (key == "image") {
-            if (data[key] !== "") {
+          if (key) {
+            if (key === "image") {
+              if (data[key] !== "") {
+                return formData.append(key, data[key]);
+              }
+            } else {
               return formData.append(key, data[key]);
             }
-          } else {
-            return formData.append(key, data[key]);
           }
+          return null;
         });
       }
       const resData = await updateData(id, formData);

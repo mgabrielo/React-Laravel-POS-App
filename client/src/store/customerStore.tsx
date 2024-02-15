@@ -77,6 +77,7 @@ export default class CustomerStore {
       updateData: action,
       deleteDialog: action,
       deleteData: action,
+      getList: action,
     });
     this.rootStore = rootStore;
   }
@@ -180,5 +181,26 @@ export default class CustomerStore {
       confirmFn: () => this.deleteData(params.row.id),
       dialogText: "Are you Sure You Want to Delete This Customer ?",
     });
+  };
+
+  getList = async (postData: any) => {
+    try {
+      const response = await fetch(`${this.BASE_URL}/get-list`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.rootStore.authstore.token}`,
+          "Content-Type": "Application/json",
+        },
+        body: JSON.stringify(postData),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        return Promise.resolve(result?.data?.customers);
+      } else {
+        return Promise.reject(result);
+      }
+    } catch (error) {
+      this.rootStore.handleError(419, "Something Went Wrong", error);
+    }
   };
 }
